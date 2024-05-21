@@ -7,8 +7,9 @@ import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import retrofit2.HttpException
@@ -165,5 +166,37 @@ class ApiTest {
             ),
             responseObject,
         )
+    }
+
+    @Test fun returnResultType() = runBlocking {
+        // Successful response without body.
+        mockWebServer.enqueue(MockResponse())
+        api.headUser().let { result ->
+            assertTrue(result.isSuccess)
+            assertEquals(Unit, result.getOrThrow())
+        }
+
+        // Error response without body.
+        mockWebServer.enqueue(MockResponse().setResponseCode(404))
+        api.getUser().let { result ->
+            assertTrue(result.isFailure)
+            val exception = result.exceptionOrNull()
+            assertNotNull(exception)
+            requireNotNull(exception)
+            assertEquals("HTTP 404 Client Error", exception.message)
+            assertTrue(exception is HttpException)
+        }
+
+        // Network error.
+        mockWebServer.shutdown()
+        api.getUser().let { result ->
+            assertTrue(result.isFailure)
+            val exception = result.exceptionOrNull()
+            assertNotNull(exception)
+            requireNotNull(exception)
+            assertTrue(exception is IOException)
+        }
+
+        Unit // Return type of runBlocking is Unit.
     }
 }
