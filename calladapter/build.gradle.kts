@@ -70,7 +70,10 @@ signing {
 
 kotlin {
     explicitApi()
-    jvmToolchain(17)
+    compilerOptions {
+        // Pin the JDK release to 11 to ensure compatibility with Android.
+        freeCompilerArgs.add("-Xjdk-release=11")
+    }
 }
 
 tasks.test {
